@@ -95,9 +95,11 @@ class YoloDetector:
         Returns:
             bboxes: list of arrays with 4 coordinates of bounding boxes with format x1,y1,x2,y2.
             points: list of arrays with coordinates of 5 facial keypoints (eyes, nose, lips corners).
+            confidences: list of confidence scores for each face.
         """
         bboxes = [[] for _ in range(len(origimgs))]
         landmarks = [[] for _ in range(len(origimgs))]
+        confidences = [[] for _ in range(len(origimgs))]
 
         pred = non_max_suppression_face(pred, conf_thres, iou_thres)
 
@@ -122,7 +124,8 @@ class YoloDetector:
                 lm = [lm[i : i + 2] for i in range(0, len(lm), 2)]
                 bboxes[image_id].append(box)
                 landmarks[image_id].append(lm)
-        return bboxes, landmarks
+                confidences[image_id].append(det[j, 4].item())
+        return bboxes, landmarks, confidences
 
     def predict(self, imgs, conf_thres=0.7, iou_thres=0.5):
         """
@@ -134,6 +137,7 @@ class YoloDetector:
         Returns:
             bboxes: list of arrays with 4 coordinates of bounding boxes with format x1,y1,x2,y2.
             points: list of arrays with coordinates of 5 facial keypoints (eyes, nose, lips corners).
+            confidences: list of confidence scores for each face.
         """
         # Pass input images through face detector
         images = imgs if isinstance(imgs, list) else [imgs]
@@ -143,9 +147,9 @@ class YoloDetector:
         images = self._preprocess(images)
         with torch.inference_mode():  # change this with torch.no_grad() for pytorch <1.8 compatibility
             pred = self.detector(images)[0]
-        bboxes, points = self._postprocess(images, origimgs, pred, conf_thres, iou_thres)
+        bboxes, points, confidences = self._postprocess(images, origimgs, pred, conf_thres, iou_thres)
 
-        return bboxes, points
+        return bboxes, points, confidences
 
     def __call__(self, *args):
         return self.predict(*args)

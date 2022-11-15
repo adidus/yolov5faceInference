@@ -15,7 +15,7 @@ model = get_model("yolov5n", gpu=-1, target_size=512)
     ],
 )
 def test_face_detection(image, face):
-    boxes, points = model(image)
+    boxes, points, confidence = model(image)
 
     for box_id, box in enumerate(boxes[0]):
         assert len(DeepDiff(box, face[box_id]["box"])) == 0
